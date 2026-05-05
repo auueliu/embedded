@@ -1,0 +1,99 @@
+<style>
+  body { margin: 0; background: black; }
+</style>
+<script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* global nn */
+
+function setup () {
+  const renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer.setSize(nn.width, nn.height)
+  //backgroundcolor
+  renderer.setClearColor(0xdeebf7)
+  document.body.appendChild(renderer.domElement)
+
+  const scene = new THREE.Scene()
+  const camera = new THREE.PerspectiveCamera(70, nn.width / nn.height, 0.1, 100)
+  camera.position.z = 5
+
+  const count = 600
+  const geo = new THREE.BufferGeometry()
+  const positions = new Float32Array(count * 3)
+  const colors = new Float32Array(count * 3)
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3]     = nn.randomFloat(-5, 5)
+    positions[i * 3 + 1] = nn.randomFloat(-5, 5)
+    positions[i * 3 + 2] = nn.randomFloat(-5, 5)
+
+    // particle color
+    const hue = nn.randomFloat(180, 300)
+    const rgb = nn.hsl2rgb(hue, 35, 75)
+    colors[i * 3]     = rgb.r / 255
+    colors[i * 3 + 1] = rgb.g / 255
+    colors[i * 3 + 2] = rgb.b / 255
+  }
+
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+  const mat = new THREE.PointsMaterial({
+    size: 0.08,
+    vertexColors: true
+  })
+
+  const particles = new THREE.Points(geo, mat)
+  scene.add(particles)
+  
+  // glowing background
+  const ellipseCanvas = document.createElement('canvas')
+  ellipseCanvas.width = 512
+  ellipseCanvas.height = 512
+
+  const ectx = ellipseCanvas.getContext('2d')
+
+  const eGradient = ectx.createRadialGradient(256, 256, 0, 256, 256, 256)
+  eGradient.addColorStop(0, 'rgba(255, 150, 180, 0.2)')
+  eGradient.addColorStop(0.5, 'rgba(255, 100, 150, 0.05)')
+  eGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+
+  ectx.fillStyle = eGradient
+  ectx.fillRect(0, 0, 512, 512)
+
+  const ellipseTexture = new THREE.CanvasTexture(ellipseCanvas)
+  const ellipseMat = new THREE.SpriteMaterial({
+    map: ellipseTexture,
+    transparent: true,
+    depthWrite: false
+  })
+  const ellipseGlow = new THREE.Sprite(ellipseMat)
+  
+  ellipseGlow.scale.set(20, 8, 1) //circle shape
+  ellipseGlow.position.set(0, 0, 0)
+  scene.add(ellipseGlow)
+
+  // rotation speed
+  const perlin = nn.perlin()
+  perlin.seed()
+  let t = 0
+
+  function animate () {
+    requestAnimationFrame(animate)
+
+    // rotation speed
+    const nx = perlin.get(t * 0.3, 0)
+    const ny = perlin.get(0, t * 0.3)
+    particles.rotation.x = nn.map(nx, -1, 1, -0.05, 0.05)
+    particles.rotation.y += 0.002
+    particles.rotation.z = nn.map(ny, -1, 1, -0.2, 0.2)
+
+    t += 0.01
+    renderer.render(scene, camera)
+  }
+
+  animate()
+}
+
+nn.on('load', setup)
+</script>
