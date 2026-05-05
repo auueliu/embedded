@@ -1,7 +1,7 @@
 <style>
   body { margin: 0; background: black; }
   /* loading text UI */
-  #loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: Georgia; font-size: 14px; pointer-events: none; }
+  #loading { position: fixed; top: 50px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: Georgia; font-size: 14px; pointer-events: none; }
 </style>
 <div id="loading">click a word to explore</div>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
@@ -33,14 +33,17 @@ function makeWordSprite (word) {
   return sprite
 }
 
-// fetch related words from ConceptNet API
+// fetch related words from API
 async function fetchRelated (word) {
-  const res = await fetch(`https://api.conceptnet.io/related/c/en/${word}?filter=/c/en&limit=10`)
-  const data = await res.json()
-  return data.related
-    .filter(r => r.weight > 0.5)
-    .slice(0, 8)
-    .map(r => r['@id'].split('/').pop().replace(/_/g, ' '))
+  try {
+    const res = await fetch(`https://api.datamuse.com/words?ml=${word}&max=10`)
+    const data = await res.json()
+    return data
+      .slice(0, 8)
+      .map(r => r.word)
+  } catch (e) {
+    return ['drift', 'echo', 'void', 'still', 'fade', 'hush', 'pale', 'soft']
+  }
 }
 
 // place words in a sphere around a center point
@@ -71,13 +74,13 @@ function setup () {
   const camera = new THREE.PerspectiveCamera(70, nn.width / nn.height, 0.1, 100)
   camera.position.z = 5
 
-  const count = 600
+  const count = 400 // particle numbers
   const geo = new THREE.BufferGeometry()
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
 
   for (let i = 0; i < count; i++) {
-    positions[i * 3]     = nn.randomFloat(-5, 5)
+    positions[i * 3]     = nn.randomFloat(-8, 8)
     positions[i * 3 + 1] = nn.randomFloat(-5, 5)
     positions[i * 3 + 2] = nn.randomFloat(-5, 5)
 
@@ -109,8 +112,8 @@ function setup () {
   const ectx = ellipseCanvas.getContext('2d')
 
   const eGradient = ectx.createRadialGradient(256, 256, 0, 256, 256, 256)
-  eGradient.addColorStop(0, 'rgba(255, 150, 180, 0.2)')
-  eGradient.addColorStop(0.5, 'rgba(255, 100, 150, 0.05)')
+  eGradient.addColorStop(0, 'rgba(255, 150, 180, 0.3)')
+  eGradient.addColorStop(0.5, 'rgba(200, 100, 200, 0.08)')
   eGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
 
   ectx.fillStyle = eGradient
@@ -128,7 +131,62 @@ function setup () {
   ellipseGlow.position.set(0, 0, 0)
   scene.add(ellipseGlow)
 
-  // rotation speed
+  // word state
+  let wordSprites = []
+
+  // camera fly target
+  let targetPos = new THREE.Vector3(0, 0, 5)
+  let isFlyingTo = false
+
+  // spawn a word + fetch and place related words around it
+  async function spawnWords (word, cx, cy, cz) {
+    document.getElementById('loading').textContent = `exploring "${word}"...`
+    wordSprites.forEach(s => scene.remove(s))
+    wordSprites = []
+    const centerSprite = makeWordSprite(word)
+    centerSprite.position.set(cx, cy, cz)
+    centerSprite.userData.pos = { x: cx, y: cy, z: cz }
+    scene.add(centerSprite)
+    wordSprites.push(centerSprite)
+    let related = []
+    try {
+      related = await fetchRelated(word)
+    } catch (e) {
+      document.getElementById('loading').textContent = 'could not fetch words'
+      return
+    }
+    const pts = placeAroundPoint(cx, cy, cz, related.length)
+    related.forEach((w, i) => {
+      const sprite = makeWordSprite(w)
+      sprite.position.set(pts[i].x, pts[i].y, pts[i].z)
+      sprite.userData.pos = pts[i]
+      scene.add(sprite)
+      wordSprites.push(sprite)
+    })
+    document.getElementById('loading').textContent = 'click a word to explore'
+  }
+
+  // click detection
+  const raycaster = new THREE.Raycaster()
+  const mouse = new THREE.Vector2()
+  renderer.domElement.addEventListener('click', async e => {
+    mouse.x = (e.clientX / nn.width) * 2 - 1
+    mouse.y = -(e.clientY / nn.height) * 2 + 1
+    raycaster.setFromCamera(mouse, camera)
+    const hits = raycaster.intersectObjects(wordSprites)
+    if (hits.length > 0) {
+      const clicked = hits[0].object
+      const word = clicked.userData.word
+      const pos = clicked.userData.pos
+      targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4)
+      isFlyingTo = true
+      await spawnWords(word, pos.x, pos.y, pos.z)
+    }
+  })
+
+  // start word
+  spawnWords('light', 0, 0, 0)
+
   const perlin = nn.perlin()
   perlin.seed()
   let t = 0
@@ -136,13 +194,20 @@ function setup () {
   function animate () {
     requestAnimationFrame(animate)
 
-    // rotation speed
+    // fade in word sprites
+    wordSprites.forEach(s => {
+      if (s.material.opacity < 1) s.material.opacity += 0.02
+    })
+
+    // smooth camera fly toward clicked word
+    if (isFlyingTo) {
+      camera.position.lerp(targetPos, 0.03)
+      if (camera.position.distanceTo(targetPos) < 0.1) isFlyingTo = false
+    }
+
     const nx = perlin.get(t * 0.3, 0)
-    const ny = perlin.get(0, t * 0.3)
     particles.rotation.x = nn.map(nx, -1, 1, -0.05, 0.05)
     particles.rotation.y += 0.002
-    particles.rotation.z = nn.map(ny, -1, 1, -0.2, 0.2)
-
     t += 0.01
     renderer.render(scene, camera)
   }
