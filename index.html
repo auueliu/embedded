@@ -12,17 +12,19 @@
   // function to create a word as a 3D sprite
 function makeWordSprite (word) {
   const hue = nn.randomFloat(196, 300)  // color
-  const rgb = nn.hsl2rgb(hue, 35, 70)
+  const rgb = nn.hsl2rgb(hue, 35, 60)
+  const dpr = window.devicePixelRatio
   
   const c = document.createElement('canvas')
-  c.width = 1024
-  c.height = 256
+  c.width = 2048 * dpr
+  c.height = 512 * dpr
   const ctx = c.getContext('2d')
-  ctx.clearRect(0, 0, 512, 128)
-  ctx.font = 'italic 96px Georgia'
+  ctx.scale(dpr, dpr)
+  ctx.clearRect(0, 0, 2048, 512)
+  ctx.font = 'italic 144px Georgia'
   ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)`
   ctx.textAlign = 'center'
-  ctx.fillText(word, 512, 160)
+  ctx.fillText(word, 1024, 256)
   const texture = new THREE.CanvasTexture(c)
   const mat = new THREE.SpriteMaterial({
     map: texture,
