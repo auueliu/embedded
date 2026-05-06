@@ -1,7 +1,7 @@
 <style>
   body { margin: 0; background: black; }
-  /* loading text UI */
-  #loading { position: fixed; top: 50px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: Georgia; font-size: 14px; pointer-events: none; }
+
+  #loading { position: fixed; top: 40px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: Georgia; font-size: 14px; pointer-events: none; }
 </style>
 <div id="loading">click a word to explore</div>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
@@ -9,7 +9,7 @@
 <script>
 /* global nn */
   
-  // function to create a word as a 3D sprite
+// create a word as a 3D sprite
 function makeWordSprite (word) {
   const hue = nn.randomFloat(196, 300)  // color
   const rgb = nn.hsl2rgb(hue, 35, 60)
@@ -21,9 +21,8 @@ function makeWordSprite (word) {
   const ctx = c.getContext('2d')
   ctx.scale(dpr, dpr)
   ctx.clearRect(0, 0, 2048, 512)
-  ctx.font = 'italic 144px Georgia'
+  ctx.font = 'italic 144px garamond'
   ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)`
-  ctx.textAlign = 'center'
   ctx.fillText(word, 1024, 256)
   const texture = new THREE.CanvasTexture(c)
   const mat = new THREE.SpriteMaterial({
@@ -41,13 +40,13 @@ function makeWordSprite (word) {
 // fetch related words from API
 async function fetchRelated (word) {
   try {
-    const res = await fetch(`https://api.datamuse.com/words?ml=${word}&max=10`)
+    const res = await fetch(`https://api.datamuse.com/words?rel_trg=${word}&max=10`)
     const data = await res.json()
     return data
-      .slice(0, 8)
+      .slice(0, 10)
       .map(r => r.word)
   } catch (e) {
-    return ['drift', 'echo', 'void', 'still', 'fade', 'hush', 'pale', 'soft']
+    return []
   }
 }
 
@@ -79,15 +78,15 @@ function setup () {
   const camera = new THREE.PerspectiveCamera(70, nn.width / nn.height, 0.1, 100)
   camera.position.z = 5
 
-  const count = 400 // particle numbers
+  const count = 12000 // particle numbers
   const geo = new THREE.BufferGeometry()
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
 
   for (let i = 0; i < count; i++) {
-    positions[i * 3]     = nn.randomFloat(-8, 8)
-    positions[i * 3 + 1] = nn.randomFloat(-5, 5)
-    positions[i * 3 + 2] = nn.randomFloat(-5, 5)
+    positions[i * 3]     = nn.randomFloat(-30, 30)
+    positions[i * 3 + 1] = nn.randomFloat(-15, 15)
+    positions[i * 3 + 2] = nn.randomFloat(-50, 15)
 
     // particle color
     const hue = nn.randomFloat(196, 300)
@@ -102,7 +101,7 @@ function setup () {
   
   // particles
   const mat = new THREE.PointsMaterial({
-    size: 0.09,
+    size: 0.14,
     vertexColors: true,
   })
 
@@ -133,8 +132,9 @@ function setup () {
   const ellipseGlow = new THREE.Sprite(ellipseMat)
   
   ellipseGlow.scale.set(20, 8, 1) //circle shape
-  ellipseGlow.position.set(0, 0, 0)
-  scene.add(ellipseGlow)
+  ellipseGlow.position.set(0, 0, -5)
+  camera.add(ellipseGlow)  // move with camera
+  scene.add(camera)
 
   // word state
   let wordSprites = []
@@ -145,7 +145,6 @@ function setup () {
 
   // spawn a word + fetch and place related words around it
   async function spawnWords (word, cx, cy, cz) {
-    document.getElementById('loading').textContent = `exploring "${word}"...`
     wordSprites.forEach(s => scene.remove(s))
     wordSprites = []
     const centerSprite = makeWordSprite(word)
@@ -185,12 +184,12 @@ function setup () {
       const pos = clicked.userData.pos
       targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4)
       isFlyingTo = true
-      await spawnWords(word, pos.x, pos.y, pos.z)
+      //await spawnWords(word, pos.x, pos.y, pos.z)
     }
   })
 
   // start word
-  spawnWords('light', 0, 0, 0)
+  spawnWords('cloud', 0, 0, 0)
 
   const perlin = nn.perlin()
   perlin.seed()
