@@ -1,41 +1,16 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 <style>
   body { margin: 0; background: black; }
-
-  #loading { position: fixed; top: 40px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: Georgia; font-size: 14px; pointer-events: none; }
+  #loading { position: fixed; top: 40px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: 'EB Garamond'; font-size: 16px; pointer-events: none; }
 </style>
 <div id="loading">click a word to explore</div>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
 <script>
 /* global nn */
-  
-// create a word as a 3D sprite
-function makeWordSprite (word) {
-  const hue = nn.randomFloat(196, 300)  // color
-  const rgb = nn.hsl2rgb(hue, 35, 60)
-  const dpr = window.devicePixelRatio
-  
-  const c = document.createElement('canvas')
-  c.width = 2048 * dpr
-  c.height = 512 * dpr
-  const ctx = c.getContext('2d')
-  ctx.scale(dpr, dpr)
-  ctx.clearRect(0, 0, 2048, 512)
-  ctx.font = 'italic 144px garamond'
-  ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1)`
-  ctx.fillText(word, 1024, 256)
-  const texture = new THREE.CanvasTexture(c)
-  const mat = new THREE.SpriteMaterial({
-    map: texture,
-    transparent: true,
-    depthWrite: false,
-    opacity: 0
-  })
-  const sprite = new THREE.Sprite(mat)
-  sprite.scale.set(2.5, 0.6, 1)
-  sprite.userData.word = word
-  return sprite
-}
 
 // fetch related words from API
 async function fetchRelated (word) {
@@ -72,6 +47,15 @@ function setup () {
   //backgroundcolor
   renderer.setClearColor(0xdeebf7)
   document.body.appendChild(renderer.domElement)
+  
+  //css renderer
+  const cssRenderer = new THREE.CSS3DRenderer()
+  cssRenderer.setSize(nn.width, nn.height)
+  cssRenderer.domElement.style.position = 'absolute'
+  cssRenderer.domElement.style.top = '0'
+  cssRenderer.domElement.style.background = 'transparent'
+  cssRenderer.domElement.style.pointerEvents = 'none'
+  document.body.appendChild(cssRenderer.domElement)
 
   const scene = new THREE.Scene()
   scene.fog = new THREE.FogExp2(0xdeebf7, 0.1) //fading in the back
@@ -142,12 +126,40 @@ function setup () {
   // camera fly target
   let targetPos = new THREE.Vector3(0, 0, 5)
   let isFlyingTo = false
+  
+  // create css word
+  function makeWordObject(word, pos) {
+    const hue = nn.randomFloat(200, 300)
+    const rgb = nn.hsl2rgb(hue, 40, 65)
+    
+    const div = document.createElement('div')
+    div.textContent = word
+    div.style.fontSize = '25px'
+    div.style.fontFamily = 'EB Garamond'
+    div.style.fontStyle = 'italic'
+    div.style.color = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
+    div.style.opacity = '0'
+    div.style.pointerEvents = 'auto'
+    div.style.cursor = 'pointer'
+    
+    div.addEventListener('click', async () => {
+      targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4)
+      isFlyingTo = true
+      await spawnWords(word, pos.x, pos.y, pos.z)
+    })
+    
+    const object = new THREE.CSS3DObject(div)
+    object.scale.set(0.01, 0.01, 0.01)
+    object.userData.word = word
+    object.userData.pos = pos
+    return object
+  }
 
   // spawn a word + fetch and place related words around it
   async function spawnWords (word, cx, cy, cz) {
     wordSprites.forEach(s => scene.remove(s))
     wordSprites = []
-    const centerSprite = makeWordSprite(word)
+    const centerSprite = makeWordObject(word, { x: cx, y: cy, z: cz })
     centerSprite.position.set(cx, cy, cz)
     centerSprite.userData.pos = { x: cx, y: cy, z: cz }
     scene.add(centerSprite)
@@ -159,9 +171,10 @@ function setup () {
       document.getElementById('loading').textContent = 'could not fetch words'
       return
     }
+    
     const pts = placeAroundPoint(cx, cy, cz, related.length)
     related.forEach((w, i) => {
-      const sprite = makeWordSprite(w)
+      const sprite = makeWordObject(w, pts[i])
       sprite.position.set(pts[i].x, pts[i].y, pts[i].z)
       sprite.userData.pos = pts[i]
       scene.add(sprite)
@@ -170,26 +183,9 @@ function setup () {
     document.getElementById('loading').textContent = 'click a word to explore'
   }
 
-  // click detection
-  const raycaster = new THREE.Raycaster()
-  const mouse = new THREE.Vector2()
-  renderer.domElement.addEventListener('click', async e => {
-    mouse.x = (e.clientX / nn.width) * 2 - 1
-    mouse.y = -(e.clientY / nn.height) * 2 + 1
-    raycaster.setFromCamera(mouse, camera)
-    const hits = raycaster.intersectObjects(wordSprites)
-    if (hits.length > 0) {
-      const clicked = hits[0].object
-      const word = clicked.userData.word
-      const pos = clicked.userData.pos
-      targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4)
-      isFlyingTo = true
-      //await spawnWords(word, pos.x, pos.y, pos.z)
-    }
-  })
 
   // start word
-  spawnWords('cloud', 0, 0, 0)
+  spawnWords('universe', 0, 0, 0)
 
   const perlin = nn.perlin()
   perlin.seed()
@@ -200,7 +196,11 @@ function setup () {
 
     // fade in word sprites
     wordSprites.forEach(s => {
-      if (s.material.opacity < 1) s.material.opacity += 0.02
+      //if (s.material.opacity < 1) s.material.opacity += 0.02 //for webgl
+      const current = parseFloat(s.element.style.opacity) || 0
+      if (current < 1) {
+        s.element.style.opacity = Math.min(1, current + 0.02)
+      }
     })
 
     // smooth camera fly toward clicked word
@@ -214,6 +214,7 @@ function setup () {
     particles.rotation.y += 0.002
     t += 0.01
     renderer.render(scene, camera)
+    cssRenderer.render(scene, camera)
   }
 
   animate()
