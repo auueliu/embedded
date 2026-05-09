@@ -3,7 +3,7 @@
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 <style>
   body { margin: 0; background: black; }
-  #loading { position: fixed; top: 40px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: 'EB Garamond'; font-size: 16px; pointer-events: none; }
+  #loading { position: fixed; top: 36px; left: 50%; transform: translate(-50%,-50%); color: rgba(10,10,10,0.4); font-family: 'EB Garamond'; font-size: 16px; pointer-events: none; }
 </style>
 <div id="loading">click a word to explore</div>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
@@ -18,7 +18,7 @@ async function fetchRelated (word) {
     const res = await fetch(`https://api.datamuse.com/words?rel_trg=${word}&max=10`)
     const data = await res.json()
     return data
-      .slice(0, 10)
+      .slice(0, 6)
       .map(r => r.word)
   } catch (e) {
     return []
@@ -134,7 +134,7 @@ function setup () {
     
     const div = document.createElement('div')
     div.textContent = word
-    div.style.fontSize = '25px'
+    div.style.fontSize = '24px'
     div.style.fontFamily = 'EB Garamond'
     div.style.fontStyle = 'italic'
     div.style.color = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
@@ -152,18 +152,24 @@ function setup () {
     object.scale.set(0.01, 0.01, 0.01)
     object.userData.word = word
     object.userData.pos = pos
+    object.userData.baseX = pos.x
+    object.userData.baseY = pos.y
+    object.userData.floatOffset = Math.random() * Math.PI * 2
     return object
   }
 
   // spawn a word + fetch and place related words around it
   async function spawnWords (word, cx, cy, cz) {
-    wordSprites.forEach(s => scene.remove(s))
-    wordSprites = []
-    const centerSprite = makeWordObject(word, { x: cx, y: cy, z: cz })
-    centerSprite.position.set(cx, cy, cz)
-    centerSprite.userData.pos = { x: cx, y: cy, z: cz }
-    scene.add(centerSprite)
-    wordSprites.push(centerSprite)
+    const existingWords = new Set(wordSprites.map(s => s.userData.word))
+    
+    if (!existingWords.has(word)) {
+      const centerSprite = makeWordObject(word, { x: cx, y: cy, z: cz })
+      centerSprite.position.set(cx, cy, cz)
+      scene.add(centerSprite)
+      wordSprites.push(centerSprite)
+      existingWords.add(word)
+    }
+    
     let related = []
     try {
       related = await fetchRelated(word)
@@ -172,11 +178,12 @@ function setup () {
       return
     }
     
-    const pts = placeAroundPoint(cx, cy, cz, related.length)
-    related.forEach((w, i) => {
+    const newWords = related.filter(w => !existingWords.has(w))
+    const pts = placeAroundPoint(cx, cy, cz, newWords.length)
+    
+    newWords.forEach((w, i) => {
       const sprite = makeWordObject(w, pts[i])
       sprite.position.set(pts[i].x, pts[i].y, pts[i].z)
-      sprite.userData.pos = pts[i]
       scene.add(sprite)
       wordSprites.push(sprite)
     })
@@ -185,7 +192,7 @@ function setup () {
 
 
   // start word
-  spawnWords('universe', 0, 0, 0)
+  spawnWords('echo', 0, 0, 0)
 
   const perlin = nn.perlin()
   perlin.seed()
@@ -193,14 +200,17 @@ function setup () {
 
   function animate () {
     requestAnimationFrame(animate)
+    const nx = perlin.get(t * 0.3, 0)
 
     // fade in word sprites
     wordSprites.forEach(s => {
-      //if (s.material.opacity < 1) s.material.opacity += 0.02 //for webgl
       const current = parseFloat(s.element.style.opacity) || 0
       if (current < 1) {
         s.element.style.opacity = Math.min(1, current + 0.02)
       }
+      // floating
+      s.position.x = s.userData.baseX + nn.map(nx, -1, 1, -0.5, 0.5)
+      s.position.y = s.userData.baseY + Math.sin(t + s.userData.floatOffset) * 0.09
     })
 
     // smooth camera fly toward clicked word
@@ -209,7 +219,7 @@ function setup () {
       if (camera.position.distanceTo(targetPos) < 0.1) isFlyingTo = false
     }
 
-    const nx = perlin.get(t * 0.3, 0)
+    
     particles.rotation.x = nn.map(nx, -1, 1, -0.05, 0.05)
     particles.rotation.y += 0.002
     t += 0.01
