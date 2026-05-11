@@ -117,6 +117,38 @@ function placeAroundPoint (cx, cy, cz, count) {
 }
 
 function setup () {
+  //full screen
+  const fullscreenHint = document.createElement('div')
+  fullscreenHint.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: #deebf7;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-style: italic;
+    cursor: pointer;
+  `
+  fullscreenHint.innerHTML = `
+  <p style="
+    font-size: 22px; 
+    letter-spacing: 0.15em; 
+    color: rgba(210, 130, 160, 0.7);
+    transition: all 0.3s ease;
+  "
+  onmouseover="this.style.letterSpacing='0.25em'; this.style.color='rgba(210, 130, 160, 1)'"
+  onmouseout="this.style.letterSpacing='0.15em'; this.style.color='rgba(210, 130, 160, 0.7)'"
+  >click to enter</p>
+  `
+  document.body.appendChild(fullscreenHint)
+
+  // fade into world
+  fullscreenHint.addEventListener('click', () => {
+    document.documentElement.requestFullscreen()
+    fullscreenHint.style.transition = 'opacity 3s ease'
+    fullscreenHint.style.opacity = '0'
+    setTimeout(() => fullscreenHint.remove(), 3000)
+  })
+  
   const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(nn.width, nn.height)
   //backgroundcolor
@@ -131,11 +163,21 @@ function setup () {
   cssRenderer.domElement.style.background = 'transparent'
   cssRenderer.domElement.style.pointerEvents = 'none'
   document.body.appendChild(cssRenderer.domElement)
+  
 
   const scene = new THREE.Scene()
   scene.fog = new THREE.FogExp2(0xdeebf7, 0.1) //fading in the back
   const camera = new THREE.PerspectiveCamera(70, nn.width / nn.height, 0.1, 100)
   camera.position.z = 5
+  
+  document.addEventListener('fullscreenchange', () => {
+    const w = window.innerWidth
+    const h = window.innerHeight
+    renderer.setSize(w, h)
+    cssRenderer.setSize(w, h)
+    camera.aspect = w / h
+    camera.updateProjectionMatrix()
+  })
 
   const count = 12000 // particle numbers
   const geo = new THREE.BufferGeometry()
