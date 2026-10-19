@@ -4,7 +4,8 @@ _a navigable word space_
 
 🔗 [auueliu.github.io/embedded](https://auueliu.github.io/embedded/)
 
-<img width="800" height="520" alt="embedded demo" src="https://github.com/user-attachments/assets/0f3400cb-f260-4711-95d3-a92f59559058" />
+<img width="500" alt="embedded demo" src="https://github.com/user-attachments/assets/0f3400cb-f260-4711-95d3-a92f59559058" />
+
 
 Inspired by word embeddings, where words are positioned in space by meaning.
 
