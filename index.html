@@ -1,125 +1,151 @@
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap"
+  rel="stylesheet"
+/>
+<link
+  href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400&display=swap"
+  rel="stylesheet"
+/>
 <style>
-  body { margin: 0; background: black; }
+  body {
+    margin: 0;
+    background: black;
+  }
   #loading {
-  position: fixed;
-  top: 36px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(40, 60, 100, 0.55);
-  font-family: 'Raleway', serif;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-  white-space: nowrap;
-}
-  
-#word-input-container {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  z-index: 999;
-}
+    position: fixed;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(40, 60, 100, 0.55);
+    font-family: "Raleway", serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
 
-#word-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(80, 100, 140, 0.35);
-  color: rgba(20, 30, 50, 0.7);
-  font-family: 'Raleway', serif;
-  font-style: italic;
-  font-size: 11px;
-  padding: 4px 0;
-  outline: none;
-  width: 200px;
-  text-align: center;
-  letter-spacing: 0.05em;
-}
+  #word-input-container {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 999;
+  }
 
-#word-input::placeholder {
-  color: rgba(60, 80, 120, 0.4);
-  font-style: italic;
-}
+  #word-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(80, 100, 140, 0.35);
+    color: rgba(20, 30, 50, 0.7);
+    font-family: "Raleway", serif;
+    font-style: italic;
+    font-size: 11px;
+    padding: 4px 0;
+    outline: none;
+    width: 200px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
 
-#word-go {
-  background: transparent;
-  border: 0.5px solid rgba(80, 100, 140, 0.5);
-  border-radius: 30px;
-  color: rgba(40, 60, 100, 0.6);
-  font-family: 'Raleway', serif;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  padding: 5px 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+  #word-input::placeholder {
+    color: rgba(60, 80, 120, 0.4);
+    font-style: italic;
+  }
 
-#word-go:hover {
-  background: rgba(100, 130, 180, 0.12);
-  border-color: rgba(80, 100, 140, 0.55);
-  color: rgba(40, 60, 100, 0.75);
-}
-  
-.word-label {
+  #word-go {
+    background: transparent;
+    border: 0.5px solid rgba(80, 100, 140, 0.5);
+    border-radius: 30px;
+    color: rgba(40, 60, 100, 0.6);
+    font-family: "Raleway", serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    padding: 5px 20px;
+    cursor: pointer;
     transition: all 0.3s ease;
-}
-.word-label:hover {
-  letter-spacing: 0.08em;
-  filter: brightness(1.2);
-}
+  }
+
+  #word-go:hover {
+    background: rgba(100, 130, 180, 0.12);
+    border-color: rgba(80, 100, 140, 0.55);
+    color: rgba(40, 60, 100, 0.75);
+  }
+
+  .word-label {
+    transition: all 0.3s ease;
+  }
+  .word-label:hover {
+    letter-spacing: 0.08em;
+    filter: brightness(1.2);
+  }
 </style>
 <div id="loading">click a word to explore</div>
 <div id="word-input-container">
-  <input id="word-input" type="text" placeholder="enter your own starting word..." />
+  <input
+    id="word-input"
+    type="text"
+    placeholder="enter your own starting word..."
+  />
   <button id="word-go">explore →</button>
 </div>
 <script src="https://cdn.jsdelivr.net/gh/netizenorg/netnet-standard-library/build/nn.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS3DRenderer.js"></script>
 <script>
-/* global nn */
+  /* global nn */
 
-// fetch related words from API
-async function fetchRelated (word) {
-  try {
-    const res = await fetch(`https://api.datamuse.com/words?rel_trg=${word}&max=10`)
-    const data = await res.json()
-    return data
-      .slice(0, 6)
-      .map(r => r.word)
-  } catch (e) {
-    return []
+  // fetch related words from API
+  async function fetchRelated(word) {
+    try {
+      const res = await fetch(
+        `https://api.datamuse.com/words?rel_trg=${word}&max=10`,
+      );
+      const data = await res.json();
+      return data.slice(0, 6).map((r) => r.word);
+    } catch (e) {
+      return [];
+    }
   }
-}
 
-// place words in a sphere around a center point
-function placeAroundPoint (cx, cy, cz, count) {
-  const positions = []
-  for (let i = 0; i < count; i++) {
-    const phi = Math.acos(2 * Math.random() - 1)
-    const theta = Math.random() * Math.PI * 2
-    const r = nn.randomFloat(2, 3.5)
-    positions.push({
-      x: cx + r * Math.sin(phi) * Math.cos(theta),
-      y: cy + r * Math.sin(phi) * Math.sin(theta),
-      z: cz + r * Math.cos(phi)
-    })
+  function hsl2rgb(h, s, l) {
+    s /= 100;
+    l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => {
+      const k = (n + h / 30) % 12;
+      return Math.round(
+        255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))),
+      );
+    };
+    return { r: f(0), g: f(8), b: f(4) };
   }
-  return positions
-}
 
-function setup () {
-  //full screen
-  const fullscreenHint = document.createElement('div')
-  fullscreenHint.style.cssText = `
+  // place words in a sphere around a center point
+  function placeAroundPoint(cx, cy, cz, count) {
+    const positions = [];
+    for (let i = 0; i < count; i++) {
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      const r = nn.randomFloat(2, 3.5);
+      positions.push({
+        x: cx + r * Math.sin(phi) * Math.cos(theta),
+        y: cy + r * Math.sin(phi) * Math.sin(theta),
+        z: cz + r * Math.cos(phi),
+      });
+    }
+    return positions;
+  }
+
+  function setup() {
+    //full screen
+    const fullscreenHint = document.createElement("div");
+    fullscreenHint.style.cssText = `
     position: fixed; inset: 0; z-index: 9999;
     background: #deebf7;
     display: flex; flex-direction: column;
@@ -127,8 +153,8 @@ function setup () {
     font-family: 'EB Garamond', Georgia, serif;
     font-style: italic;
     cursor: pointer;
-  `
-  fullscreenHint.innerHTML = `
+  `;
+    fullscreenHint.innerHTML = `
   <p style="
     font-size: 22px; 
     letter-spacing: 0.15em; 
@@ -138,236 +164,241 @@ function setup () {
   onmouseover="this.style.letterSpacing='0.25em'; this.style.color='rgba(210, 130, 160, 1)'"
   onmouseout="this.style.letterSpacing='0.15em'; this.style.color='rgba(210, 130, 160, 0.7)'"
   >click to enter</p>
-  `
-  document.body.appendChild(fullscreenHint)
+  `;
+    document.body.appendChild(fullscreenHint);
 
-  // fade into world
-  fullscreenHint.addEventListener('click', () => {
-    document.documentElement.requestFullscreen()
-    fullscreenHint.style.transition = 'opacity 3s ease'
-    fullscreenHint.style.opacity = '0'
-    setTimeout(() => fullscreenHint.remove(), 3000)
-  })
-  
-  const renderer = new THREE.WebGLRenderer({ antialias: true })
-  renderer.setSize(nn.width, nn.height)
-  //backgroundcolor
-  renderer.setClearColor(0xdeebf7)
-  document.body.appendChild(renderer.domElement)
-  
-  //css renderer
-  const cssRenderer = new THREE.CSS3DRenderer()
-  cssRenderer.setSize(nn.width, nn.height)
-  cssRenderer.domElement.style.position = 'absolute'
-  cssRenderer.domElement.style.top = '0'
-  cssRenderer.domElement.style.background = 'transparent'
-  cssRenderer.domElement.style.pointerEvents = 'none'
-  document.body.appendChild(cssRenderer.domElement)
-  
+    // fade into world
+    fullscreenHint.addEventListener("click", () => {
+      document.documentElement.requestFullscreen();
+      fullscreenHint.style.transition = "opacity 3s ease";
+      fullscreenHint.style.opacity = "0";
+      setTimeout(() => fullscreenHint.remove(), 3000);
+    });
 
-  const scene = new THREE.Scene()
-  scene.fog = new THREE.FogExp2(0xdeebf7, 0.1) //fading in the back
-  const camera = new THREE.PerspectiveCamera(70, nn.width / nn.height, 0.1, 100)
-  camera.position.z = 5
-  
-  document.addEventListener('fullscreenchange', () => {
-    const w = window.innerWidth
-    const h = window.innerHeight
-    renderer.setSize(w, h)
-    cssRenderer.setSize(w, h)
-    camera.aspect = w / h
-    camera.updateProjectionMatrix()
-  })
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(nn.width, nn.height);
+    //backgroundcolor
+    renderer.setClearColor(0xdeebf7);
+    document.body.appendChild(renderer.domElement);
 
-  const count = 12000 // particle numbers
-  const geo = new THREE.BufferGeometry()
-  const positions = new Float32Array(count * 3)
-  const colors = new Float32Array(count * 3)
+    //css renderer
+    const cssRenderer = new THREE.CSS3DRenderer();
+    cssRenderer.setSize(nn.width, nn.height);
+    cssRenderer.domElement.style.position = "absolute";
+    cssRenderer.domElement.style.top = "0";
+    cssRenderer.domElement.style.background = "transparent";
+    cssRenderer.domElement.style.pointerEvents = "none";
+    document.body.appendChild(cssRenderer.domElement);
 
-  for (let i = 0; i < count; i++) {
-    positions[i * 3]     = nn.randomFloat(-30, 30)
-    positions[i * 3 + 1] = nn.randomFloat(-15, 15)
-    positions[i * 3 + 2] = nn.randomFloat(-50, 15)
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xdeebf7, 0.1); //fading in the back
+    const camera = new THREE.PerspectiveCamera(
+      70,
+      nn.width / nn.height,
+      0.1,
+      100,
+    );
+    camera.position.z = 5;
 
-    // particle color
-    const hue = nn.randomFloat(196, 300)
-    const rgb = nn.hsl2rgb(hue, 32, 74)
-    colors[i * 3]     = rgb.r / 255
-    colors[i * 3 + 1] = rgb.g / 255
-    colors[i * 3 + 2] = rgb.b / 255
-  }
+    document.addEventListener("fullscreenchange", () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      renderer.setSize(w, h);
+      cssRenderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    });
 
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  
-  // particles
-  const mat = new THREE.PointsMaterial({
-    size: 0.14,
-    vertexColors: true,
-  })
+    const count = 12000; // particle numbers
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
 
-  const particles = new THREE.Points(geo, mat)
-  scene.add(particles)
-  
-  // glowing background
-  const ellipseCanvas = document.createElement('canvas')
-  ellipseCanvas.width = 512
-  ellipseCanvas.height = 512
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = nn.randomFloat(-30, 30);
+      positions[i * 3 + 1] = nn.randomFloat(-15, 15);
+      positions[i * 3 + 2] = nn.randomFloat(-50, 15);
 
-  const ectx = ellipseCanvas.getContext('2d')
-
-  const eGradient = ectx.createRadialGradient(256, 256, 0, 256, 256, 256)
-  eGradient.addColorStop(0, 'rgba(255, 150, 180, 0.3)')
-  eGradient.addColorStop(0.5, 'rgba(200, 100, 200, 0.08)')
-  eGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
-
-  ectx.fillStyle = eGradient
-  ectx.fillRect(0, 0, 512, 512)
-
-  const ellipseTexture = new THREE.CanvasTexture(ellipseCanvas)
-  const ellipseMat = new THREE.SpriteMaterial({
-    map: ellipseTexture,
-    transparent: true,
-    depthWrite: false
-  })
-  const ellipseGlow = new THREE.Sprite(ellipseMat)
-  
-  ellipseGlow.scale.set(20, 8, 1) //circle shape
-  ellipseGlow.position.set(0, 0, -5)
-  camera.add(ellipseGlow)  // move with camera
-  scene.add(camera)
-
-  // word state
-  let wordSprites = []
-
-  // camera fly target
-  let targetPos = new THREE.Vector3(0, 0, 5)
-  let isFlyingTo = false
-  
-  // create css word
-  function makeWordObject(word, pos) {
-    const hue = nn.randomFloat(200, 300)
-    const rgb = nn.hsl2rgb(hue, 40, 65)
-    
-    const div = document.createElement('div')
-    div.textContent = word
-    div.style.fontSize = '24px'
-    div.style.fontFamily = 'EB Garamond'
-    div.style.fontStyle = 'italic'
-    div.style.color = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
-    div.style.opacity = '0'
-    div.style.pointerEvents = 'auto'
-    div.style.cursor = 'pointer'
-    div.classList.add('word-label')
-    
-    div.addEventListener('click', async () => {
-      targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4)
-      isFlyingTo = true
-      await spawnWords(word, pos.x, pos.y, pos.z)
-    })
-    
-    const object = new THREE.CSS3DObject(div)
-    object.scale.set(0.01, 0.01, 0.01)
-    object.userData.word = word
-    object.userData.pos = pos
-    object.userData.baseX = pos.x
-    object.userData.baseY = pos.y
-    object.userData.floatOffset = Math.random() * Math.PI * 2
-    return object
-  }
-
-  // spawn a word + fetch and place related words around it
-  async function spawnWords (word, cx, cy, cz) {
-    const existingWords = new Set(wordSprites.map(s => s.userData.word))
-    
-    if (!existingWords.has(word)) {
-      const centerSprite = makeWordObject(word, { x: cx, y: cy, z: cz })
-      centerSprite.position.set(cx, cy, cz)
-      scene.add(centerSprite)
-      wordSprites.push(centerSprite)
-      existingWords.add(word)
+      // particle color
+      const hue = nn.randomFloat(196, 300);
+      const rgb = hsl2rgb(hue, 32, 74);
+      colors[i * 3] = rgb.r / 255;
+      colors[i * 3 + 1] = rgb.g / 255;
+      colors[i * 3 + 2] = rgb.b / 255;
     }
-    
-    let related = []
-    try {
-      related = await fetchRelated(word)
-    } catch (e) {
-      document.getElementById('loading').textContent = 'could not fetch words'
-      return
+
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+    // particles
+    const mat = new THREE.PointsMaterial({
+      size: 0.14,
+      vertexColors: true,
+    });
+
+    const particles = new THREE.Points(geo, mat);
+    scene.add(particles);
+
+    // glowing background
+    const ellipseCanvas = document.createElement("canvas");
+    ellipseCanvas.width = 512;
+    ellipseCanvas.height = 512;
+
+    const ectx = ellipseCanvas.getContext("2d");
+
+    const eGradient = ectx.createRadialGradient(256, 256, 0, 256, 256, 256);
+    eGradient.addColorStop(0, "rgba(255, 150, 180, 0.3)");
+    eGradient.addColorStop(0.5, "rgba(200, 100, 200, 0.08)");
+    eGradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+    ectx.fillStyle = eGradient;
+    ectx.fillRect(0, 0, 512, 512);
+
+    const ellipseTexture = new THREE.CanvasTexture(ellipseCanvas);
+    const ellipseMat = new THREE.SpriteMaterial({
+      map: ellipseTexture,
+      transparent: true,
+      depthWrite: false,
+    });
+    const ellipseGlow = new THREE.Sprite(ellipseMat);
+
+    ellipseGlow.scale.set(20, 8, 1); //circle shape
+    ellipseGlow.position.set(0, 0, -5);
+    camera.add(ellipseGlow); // move with camera
+    scene.add(camera);
+
+    // word state
+    let wordSprites = [];
+
+    // camera fly target
+    let targetPos = new THREE.Vector3(0, 0, 5);
+    let isFlyingTo = false;
+
+    // create css word
+    function makeWordObject(word, pos) {
+      const hue = nn.randomFloat(200, 300);
+      const rgb = hsl2rgb(hue, 40, 65);
+
+      const div = document.createElement("div");
+      div.textContent = word;
+      div.style.fontSize = "24px";
+      div.style.fontFamily = "EB Garamond";
+      div.style.fontStyle = "italic";
+      div.style.color = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+      div.style.opacity = "0";
+      div.style.pointerEvents = "auto";
+      div.style.cursor = "pointer";
+      div.classList.add("word-label");
+
+      div.addEventListener("click", async () => {
+        targetPos = new THREE.Vector3(pos.x, pos.y, pos.z + 4);
+        isFlyingTo = true;
+        await spawnWords(word, pos.x, pos.y, pos.z);
+      });
+
+      const object = new THREE.CSS3DObject(div);
+      object.scale.set(0.01, 0.01, 0.01);
+      object.userData.word = word;
+      object.userData.pos = pos;
+      object.userData.baseX = pos.x;
+      object.userData.baseY = pos.y;
+      object.userData.floatOffset = Math.random() * Math.PI * 2;
+      return object;
     }
-    
-    const newWords = related.filter(w => !existingWords.has(w))
-    const pts = placeAroundPoint(cx, cy, cz, newWords.length)
-    
-    newWords.forEach((w, i) => {
-      const sprite = makeWordObject(w, pts[i])
-      sprite.position.set(pts[i].x, pts[i].y, pts[i].z)
-      scene.add(sprite)
-      wordSprites.push(sprite)
-    })
-    document.getElementById('loading').textContent = 'click a word to explore'
-  }
 
+    // spawn a word + fetch and place related words around it
+    async function spawnWords(word, cx, cy, cz) {
+      const existingWords = new Set(wordSprites.map((s) => s.userData.word));
 
-  // start word
-  spawnWords('echo', 0, 0, 0)
-  
-  // custom start word input
-  const input = document.getElementById('word-input')
-  const goBtn = document.getElementById('word-go')
-
-  function startCustomWord () {
-    const word = input.value.trim().toLowerCase()
-    if (!word) return
-    wordSprites.forEach(s => scene.remove(s))
-    wordSprites = []
-    camera.position.set(0, 0, 5)
-    targetPos = new THREE.Vector3(0, 0, 5)
-    spawnWords(word, 0, 0, 0)
-    input.value = ''
-  }
-
-  // click go or press enter
-  goBtn.addEventListener('click', startCustomWord)
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') startCustomWord()
-  })
-
-  const perlin = nn.perlin()
-  perlin.seed()
-  let t = 0
-
-  function animate () {
-    requestAnimationFrame(animate)
-    const nx = perlin.get(t * 0.3, 0)
-
-    // fade in word sprites
-    wordSprites.forEach(s => {
-      const current = parseFloat(s.element.style.opacity) || 0
-      if (current < 1) {
-        s.element.style.opacity = Math.min(1, current + 0.02)
+      if (!existingWords.has(word)) {
+        const centerSprite = makeWordObject(word, { x: cx, y: cy, z: cz });
+        centerSprite.position.set(cx, cy, cz);
+        scene.add(centerSprite);
+        wordSprites.push(centerSprite);
+        existingWords.add(word);
       }
-      // floating
-      s.position.x = s.userData.baseX + nn.map(nx, -1, 1, -0.5, 0.5)
-      s.position.y = s.userData.baseY + Math.sin(t + s.userData.floatOffset) * 0.09
-    })
 
-    // smooth camera fly toward clicked word
-    if (isFlyingTo) {
-      camera.position.lerp(targetPos, 0.03)
-      if (camera.position.distanceTo(targetPos) < 0.1) isFlyingTo = false
+      let related = [];
+      try {
+        related = await fetchRelated(word);
+      } catch (e) {
+        document.getElementById("loading").textContent =
+          "could not fetch words";
+        return;
+      }
+
+      const newWords = related.filter((w) => !existingWords.has(w));
+      const pts = placeAroundPoint(cx, cy, cz, newWords.length);
+
+      newWords.forEach((w, i) => {
+        const sprite = makeWordObject(w, pts[i]);
+        sprite.position.set(pts[i].x, pts[i].y, pts[i].z);
+        scene.add(sprite);
+        wordSprites.push(sprite);
+      });
+      document.getElementById("loading").textContent =
+        "click a word to explore";
     }
 
-    
-    particles.rotation.x = nn.map(nx, -1, 1, -0.05, 0.05)
-    particles.rotation.y += 0.002
-    t += 0.01
-    renderer.render(scene, camera)
-    cssRenderer.render(scene, camera)
+    // start word
+    spawnWords("echo", 0, 0, 0);
+
+    // custom start word input
+    const input = document.getElementById("word-input");
+    const goBtn = document.getElementById("word-go");
+
+    function startCustomWord() {
+      const word = input.value.trim().toLowerCase();
+      if (!word) return;
+      wordSprites.forEach((s) => scene.remove(s));
+      wordSprites = [];
+      camera.position.set(0, 0, 5);
+      targetPos = new THREE.Vector3(0, 0, 5);
+      spawnWords(word, 0, 0, 0);
+      input.value = "";
+    }
+
+    // click go or press enter
+    goBtn.addEventListener("click", startCustomWord);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") startCustomWord();
+    });
+
+    const perlin = nn.perlin();
+    perlin.seed();
+    let t = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const nx = perlin.get(t * 0.3, 0);
+
+      // fade in word sprites
+      wordSprites.forEach((s) => {
+        const current = parseFloat(s.element.style.opacity) || 0;
+        if (current < 1) {
+          s.element.style.opacity = Math.min(1, current + 0.02);
+        }
+        // floating
+        s.position.x = s.userData.baseX + nn.map(nx, -1, 1, -0.5, 0.5);
+        s.position.y =
+          s.userData.baseY + Math.sin(t + s.userData.floatOffset) * 0.09;
+      });
+
+      // smooth camera fly toward clicked word
+      if (isFlyingTo) {
+        camera.position.lerp(targetPos, 0.03);
+        if (camera.position.distanceTo(targetPos) < 0.1) isFlyingTo = false;
+      }
+
+      particles.rotation.x = nn.map(nx, -1, 1, -0.05, 0.05);
+      particles.rotation.y += 0.002;
+      t += 0.01;
+      renderer.render(scene, camera);
+      cssRenderer.render(scene, camera);
+    }
+
+    animate();
   }
 
-  animate()
-}
-
-nn.on('load', setup)
+  nn.on("load", setup);
 </script>
